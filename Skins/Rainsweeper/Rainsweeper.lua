@@ -1,5 +1,3 @@
-PROPERTIES = {}
-
 --------------------------------------------------------------------------------------------
 -- INITIALIZE
 -- Runs when skin is loaded or refreshed. Sets up the board, declares global variables, and
@@ -10,10 +8,10 @@ function Initialize()
 	---------------------------------------------------------------------
 	-- GET USER SETTINGS FROM SKIN
 	
-	iMines = tonumber(SKIN:GetVariable('NumberOfMines'))
-	iRows = tonumber(SKIN:GetVariable('NumberOfRows'))
-	iCols = tonumber(SKIN:GetVariable('NumberOfCols'))
-	iQuestions = tonumber(SKIN:GetVariable('Questions'))
+	iMines     = tonumber(SKIN:GetVariable('NumberOfMines', '10'))
+	iRows      = tonumber(SKIN:GetVariable('NumberOfRows',  '9' ))
+	iCols      = tonumber(SKIN:GetVariable('NumberOfCols',  '9' ))
+	iQuestions = tonumber(SKIN:GetVariable('Questions',     '0' ))
 	
 	-- These basic variables determine all of the parameters for the
 	-- current game. The tonumber() wrapper means we can use their
@@ -24,8 +22,7 @@ function Initialize()
 	
 	tSquares = {}
 	
-	iSquares = iRows * iCols
-	for i = 1, iSquares do
+	for i = 1, iRows * iCols do
 		local iX = (i-1) - math.floor((i-1) / iCols)*iCols
 		local iY = math.floor((i-1) / iCols)
 		tSquares[i] = { z=i, x=iX, y=iY, m=0, n=0, f=0, q=0, c=0 }
@@ -42,7 +39,7 @@ function Initialize()
 	---------------------------------------------------------------------
 	-- CREATE SQUARES GRID IN SKIN
 	
-	for i = 2, iSquares do
+	for i = 2, #tSquares do
 		if (i-1) % iCols == 0 then
 			SKIN:Bang('!SetOption '..i..' MeterStyle "StyleSquare | StyleNewRow"')
 		else
@@ -157,7 +154,7 @@ function LeftClick(z)
 		
 		local iUnplantedMines = iMines
 		while iUnplantedMines > 0 do
-			local iRandomSquare = math.random(1,iSquares)
+			local iRandomSquare = math.random(1,#tSquares)
 			if tSquares[iRandomSquare]['m'] == 0 and tSquares[iRandomSquare]['c'] == 0 and iRandomSquare ~= z then
 				tSquares[iRandomSquare]['m'] = 1
 				iUnplantedMines = iUnplantedMines -1
@@ -172,7 +169,7 @@ function LeftClick(z)
 		-- been clicked in order to make sure that the player never loses
 		-- on her first move.
 		
-		for i = 1, iSquares do
+		for i = 1, #tSquares do
 			tSquares[i]['n'] = Adjacents(i, 'Threats')
 		end
 		
@@ -292,7 +289,7 @@ function ClearAll()
 	-- CREATE QUEUE AND CLEAR
 	
 	local tAll = {}
-	for i = 1, iSquares do table.insert(tAll, i) end
+	for i = 1, #tSquares do table.insert(tAll, i) end
 	Clear(tAll)
 	
 	-- Finally, we send the queue - which, in this case, consists of
@@ -371,7 +368,7 @@ function Clear(tQueue, iAdjacents)
 		-- after one last update, and send a command to the Scores() function
 		-- to update the player's statistics for the current difficulty level.
 		
-		for i = 1, iSquares do
+		for i = 1, #tSquares do
 			if tSquares[i]['c'] == 0 then
 				if tSquares[i]['m'] == 1 and tSquares[i]['f'] == 0 then
 					Render('UntrippedMine', i)
@@ -393,14 +390,14 @@ function Clear(tQueue, iAdjacents)
 		
 		Message('Lose')
 		SKIN:Bang('!SetOption Background SolidColor "#ColorBackgroundLose#"')
-		SKIN:Bang('!Execute #OpenMenu#')
+		SKIN:Bang('#OpenMenu#')
 		
 		-- Finally, we send a feedback message informing the player of her
 		-- loss, along with a red coloration on the background. We also open
 		-- the menu, since she'll probably want to either start a new game or
 		-- close the skin in disgust, depending on her mood.
 		
-	elseif iCleared == iSquares - iMines then
+	elseif iCleared == #tSquares - iMines then
 	
 		---------------------------------------------------------------------
 		-- WIN
@@ -416,7 +413,7 @@ function Clear(tQueue, iAdjacents)
 		-- flag all of the mines, since the numbers leave no doubt about
 		-- their locations.
 		
-		for i = 1, iSquares do
+		for i = 1, #tSquares do
 			if tSquares[i]['c'] == 0 then 
 				if tSquares[i]['f'] == 0 then
 					tSquares[i]['f'] = 1
@@ -433,7 +430,7 @@ function Clear(tQueue, iAdjacents)
 		-- "defused" mines, indicating victory.
 		
 		Message('Win')
-		SKIN:Bang('!Execute #OpenMenu#')
+		SKIN:Bang('#OpenMenu#')
 		SKIN:Bang('!SetOption Background SolidColor "#ColorBackgroundWin#"')
 		
 		-- We end with the opposite equivalents of the "defeat" feedback
@@ -441,7 +438,7 @@ function Clear(tQueue, iAdjacents)
 		
 	else
 		Message('Close')
-		SKIN:Bang('!Execute #CloseMenu#')
+		SKIN:Bang('#CloseMenu#')
 		
 		-- If the player has neither won nor lost yet, we simply end the
 		-- action by dismissing any feedback messages from the last cycle,
@@ -515,12 +512,12 @@ function RightClick(z)
 end
 
 function NewGame()
-	for i = 1, iSquares do
+	for i = 1, #tSquares do
 		Render('Opaque', i)
 	end
 	Message('Close')
 	SKIN:Bang('!SetOption Background SolidColor "#ColorBackground#"')
-	SKIN:Bang('!Execute #CloseMenu#')
+	SKIN:Bang('#CloseMenu#')
 	Initialize()
 	
 	-- The "new game" function resets the skin to the state it was in
@@ -648,7 +645,10 @@ function Adjacents(z, sRequest)
 		end
 		
 		-- This action is requested by the Clear() function. When a
-		-- square
+		-- square is successfully cleared, and has no adjacent mines, we
+		-- also clear the surrounding squares as a courtesy, to save
+		-- time. This function is called recursively until no more
+		-- unthreatened squares can be found.
 		
 	elseif sRequest == 'Threats' then
 		return iThreats
@@ -665,19 +665,19 @@ function Render(sRequest, z)
 		SKIN:Bang('!SetOption '..z..' Text ""')
 		SKIN:Bang('!SetOption '..z..' ToolTipTitle ""')
 		SKIN:Bang('!SetOption '..z..' ToolTipText ""')
-		SKIN:Bang('!SetOption '..z..' MouseOverAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareRevealed#"][!Update]"""')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquare#"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction """[!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareRevealed#"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """[!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquare#"][!Update]"""')
 	elseif sRequest == 'Clear' then
 		SKIN:Bang('!SetOption '..z..' SolidColor "#ColorSquareClear#"')
 		if tSquares[z]['n'] > 0 then
 			SKIN:Bang('!SetOption '..z..' Text "'..tSquares[z]['n']..'"')
 		end
-		SKIN:Bang('!SetOption '..z..' MouseOverAction "!Execute []"')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction "!Execute []"')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction "[]"')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction "[]"')
 	elseif sRequest == 'Flag' then
 		SKIN:Bang('!SetOption '..z..' SolidColor "#ColorSquareFlag#"')
-		SKIN:Bang('!SetOption '..z..' MouseOverAction "!Execute []"')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction "!Execute []"')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction "[]"')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction "[]"')
 	elseif sRequest == 'Question' then
 		SKIN:Bang('!SetOption '..z..' SolidColor "#ColorSquareQuestion#"')
 		SKIN:Bang('!SetOption '..z..' Text "?"')
@@ -685,35 +685,35 @@ function Render(sRequest, z)
 		SKIN:Bang('!SetOption '..z..' SolidColor "#ColorSquareMineDefused#"')
 		SKIN:Bang('!SetOption '..z..' ToolTipTitle "Defused Mine"') 
 		SKIN:Bang('!SetOption '..z..' ToolTipText "You defused this mine. Nicely done."')
-		SKIN:Bang('!SetOption '..z..' MouseOverAction "!Execute []"')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction "!Execute []"')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction "[]"')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction "[]"')
 	elseif sRequest == 'TrippedMine' then
 		SKIN:Bang('!SetOption '..z..' SolidColor "#ColorSquareMineTripped#"')
 		SKIN:Bang('!SetOption '..z..' ToolTipTitle "Tripped Mine"') 
 		SKIN:Bang('!SetOption '..z..' ToolTipText "You stepped on this mine. It\'s ok. Lots of people live without legs."')
-		SKIN:Bang('!SetOption '..z..' MouseOverAction "!Execute []"')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction "!Execute []"')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction "[]"')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction "[]"')
 	elseif sRequest == 'UntrippedMine' then
 		SKIN:Bang('!SetOption '..z..' SolidColor "#ColorSquareMine#"') 
 		SKIN:Bang('!SetOption '..z..' ToolTipTitle "Mine"') 
 		SKIN:Bang('!SetOption '..z..' ToolTipText "There was a mine here."')
-		SKIN:Bang('!SetOption '..z..' MouseOverAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "255,0,0"][!Update]"""')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareMine#"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction """[!SetOption #*CURRENTSECTION*# SolidColor "255,0,0"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """[!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareMine#"][!Update]"""')
 	elseif sRequest == 'RightFlag' then
 		SKIN:Bang('!SetOption '..z..' ToolTipTitle "Flag"') 
 		SKIN:Bang('!SetOption '..z..' ToolTipText "You correctly identified this mine. Or, you just got lucky. But we won\'t hold it against you."')
-		SKIN:Bang('!SetOption '..z..' MouseOverAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "255,0,0"][!Update]"""')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareFlag#"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction """[!SetOption #*CURRENTSECTION*# SolidColor "255,0,0"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """[!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareFlag#"][!Update]"""')
 	elseif sRequest == 'WrongFlag' then
 		SKIN:Bang('!SetOption '..z..' SolidColor "#ColorSquareFlagWrong#"') 
 		SKIN:Bang('!SetOption '..z..' ToolTipTitle "False Positive"') 
 		SKIN:Bang('!SetOption '..z..' ToolTipText "You flagged this spot, but there was no mine here."')
-		SKIN:Bang('!SetOption '..z..' MouseOverAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareClear#"][!Update]"""')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareFlagWrong#"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction """[!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareClear#"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """[!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareFlagWrong#"][!Update]"""')
 	elseif sRequest == 'Remainder' then
 		SKIN:Bang('!SetOption '..z..' SolidColor "#ColorSquareRevealed#"')
-		SKIN:Bang('!SetOption '..z..' MouseOverAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareClear#"][!Update]"""')
-		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """!Execute [!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareRevealed#"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseOverAction """[!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareClear#"][!Update]"""')
+		SKIN:Bang('!SetOption '..z..' MouseLeaveAction """[!SetOption #*CURRENTSECTION*# SolidColor "#ColorSquareRevealed#"][!Update]"""')
 	end
 end
 
@@ -940,7 +940,7 @@ function Scores(sShowLevel, sRequest)
 		SKIN:Bang('!SetOption ScoresBestTimeValue Text '..tScores[1]['time'])
 		SKIN:Bang('!SetOption ScoresBestTimeValue ToolTipText "'..tScores[1]['time']..'#CRLF#'..tScores[1]['date']..'#CRLF##CRLF#'..tScores[2]['time']..'#CRLF#'..tScores[2]['date']..'#CRLF##CRLF#'..tScores[3]['time']..'#CRLF#'..tScores[3]['date']..'#CRLF##CRLF#'..tScores[4]['time']..'#CRLF#'..tScores[4]['date']..'#CRLF##CRLF#'..tScores[5]['time']..'#CRLF#'..tScores[5]['date']..'"')
 		SKIN:Bang('!SetOption ScoresReset FontColor "#ColorTextBright#"')
-		SKIN:Bang('!SetOption MessageYes LeftMouseUpAction """!Execute [!CommandMeasure MeasureScript Message(\'Close\')][!CommandMeasure MeasureScript "Scores(\''..sShowLevel..'\', \'Reset\')"][!Update]"""')
+		SKIN:Bang('!SetOption MessageYes LeftMouseUpAction """[!CommandMeasure MeasureScript Message(\'Close\')][!CommandMeasure MeasureScript "Scores(\''..sShowLevel..'\', \'Reset\')"][!Update]"""')
 		SKIN:Bang('!SetOption ScoresReset ToolTipText "Click to reset your statistics for the '..sShowLevel..' level."')
 	end
 	

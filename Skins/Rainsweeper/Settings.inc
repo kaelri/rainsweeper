@@ -1,35 +1,35 @@
 [Variables]
-NumberOfMines=40
-NumberOfRows=16
-NumberOfCols=16
+NumberOfMines=10
+NumberOfRows=9
+NumberOfCols=9
 Questions=0
 
 SquareSize=21
 SquareMargin=4
 
-InputX=286
-InputY1=240
-InputY2=276
-InputY3=312
+InputX=111
+InputY1=65
+InputY2=101
+InputY3=137
 
-BeginnerTime1=16
-BeginnerDate1=20:08 PM on 24 Jun 2012
-BeginnerTime2=28
-BeginnerDate2=11:08 AM on 19 Nov 2011
-BeginnerTime3=64
-BeginnerDate3=16:41 PM on 26 Nov 2011
+BeginnerTime1=999
+BeginnerDate1=Never
+BeginnerTime2=999
+BeginnerDate2=Never
+BeginnerTime3=999
+BeginnerDate3=Never
 BeginnerTime4=999
 BeginnerDate4=Never
 BeginnerTime5=999
 BeginnerDate5=Never
-BeginnerPlayed=7
-BeginnerWon=3
-BeginnerStreak=1
-BeginnerMostWins=2
-BeginnerMostLosses=3
+BeginnerPlayed=0
+BeginnerWon=0
+BeginnerStreak=0
+BeginnerMostWins=0
+BeginnerMostLosses=0
 
-IntermediateTime1=115
-IntermediateDate1=14:53 PM on 26 Jun 2012
+IntermediateTime1=999
+IntermediateDate1=Never
 IntermediateTime2=999
 IntermediateDate2=Never
 IntermediateTime3=999
@@ -38,11 +38,11 @@ IntermediateTime4=999
 IntermediateDate4=Never
 IntermediateTime5=999
 IntermediateDate5=Never
-IntermediatePlayed=8
-IntermediateWon=1
-IntermediateStreak=-1
-IntermediateMostWins=1
-IntermediateMostLosses=6
+IntermediatePlayed=0
+IntermediateWon=0
+IntermediateStreak=0
+IntermediateMostWins=0
+IntermediateMostLosses=0
 
 AdvancedTime1=999
 AdvancedDate1=Never
